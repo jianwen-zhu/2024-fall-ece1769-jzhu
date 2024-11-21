@@ -1,0 +1,156 @@
+\documentclass[12pt]{article}
+\usepackage[english]{babel}
+\usepackage{natbib}
+\usepackage{url}
+\usepackage[utf8x]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\graphicspath{{images/}}
+\usepackage{parskip}
+\usepackage{fancyhdr}
+\usepackage{vmargin}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{siunitx}
+\usepackage{rotating}
+\usepackage{multirow}
+\usepackage{listings}
+\usepackage{hyperref}
+\setmarginsrb{3 cm}{2.5 cm}{3 cm}{2.5 cm}{1 cm}{1.5 cm}{1 cm}{1.5 cm}
+
+\title{Tutorial-2: Logic Synthesis with YOSYS}								% Title
+\author{Jianwen Zhu}								% Author
+\date{\today}											% Date
+\newcommand{\course} {ECE1769H}
+\newcommand{\quotes}[1]{``#1''}
+
+\makeatletter
+\let\thetitle\@title
+\let\theauthor\@author
+\let\thedate\@date
+\makeatother
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\course}
+\rhead{\thetitle}
+\cfoot{\thepage}
+
+\newcommand {\comment}[1]{\iffalse #1 \fi}
+
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{titlepage}
+	\centering
+    \vspace*{0.5 cm}
+    \includegraphics[scale = 0.12]{UofT.png}\\[1.0 cm]	% University Logo
+    \textsc{\LARGE University of Toronto}\\[2.0 cm]	% University Name
+	\textsc{\Large \course}\\[0.5 cm]				% Course Code
+	\textsc{\large Behavioral Synthesis of Digital Integrated Circuits}\\[0.5 cm]				% Course Name
+	\rule{\linewidth}{0.2 mm} \\[0.4 cm]
+	{ \huge \bfseries \thetitle}\\
+	\rule{\linewidth}{0.2 mm} \\[1.5 cm]
+	
+	%\begin{minipage}{0.4\textwidth}
+		%\begin{flushleft} 
+		\large
+			\emph{Instructor:}\\
+			\theauthor 
+		%	\end{flushleft}
+		%	\end{minipage}~
+			
+ 
+	\vfill
+	
+\end{titlepage}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Introduction}
+
+In the previous tutorial you started with a reference application in
+C, and learned two different design flows to convert the reference
+application into hardware:
+
+\begin{enumerate}
+\item Register Transfer Level (RTL) design flow, where you enter your
+  design at RTL in Verilog {\bf manually};
+  
+\item C-based design flow, where you enter your design in C, and then
+  use high level synthesis (HLS) to generate a RTL design {\bf
+    automatically}.
+\end{enumerate}
+
+In both design flows, you used {\bf compiled functional simulation} to
+verify your design at the register transfer level.
+
+In this tutorial, you will learn how to perform {\bf logic synthesis}
+to bring the RTL design into logic network. You will use an open
+source synthesis tool \quotes{Yosys}, which is widely used in academic
+research.
+
+\section{Environment Setup}
+
+It is the same as Tutorial 1, and you can simply work within the same
+directory cloned from the git repository.
+
+Similar to Tutorial 1, the required software (Yosys) for this tutorial
+is already installed on UG machines. Make sure to add the following
+path variable to {site.mk} file.
+
+\begin{lstlisting}[language=bash]
+YOSYS_PATH = /cad2/ece1769s/yosys/bin
+\end{lstlisting}
+
+\section{Synthesis Make Targets}
+
+The following make target take the Verilog RTL as input and synthesize
+the design. This is accomplished by first generating a YOSIS synthesis
+script, \quotes{synthe.ys} and then use it to drive the YOSIS tool to
+perform logic synthesis.
+
+\begin{lstlisting}[language=bash]
+  $ make syn
+\end{lstlisting}
+
+The following make target reports the design statistics of the
+synthesized design from the previous step. The statistics can be found
+in the \quotes{synth.stat} file.
+
+\begin{lstlisting}[language=bash]
+  $ make stat
+\end{lstlisting}
+
+\subsection{Synthesis Options}
+
+In your \quotes{common.mk} file, three empty variables has been
+defined. The rule checks the the value of these variables and
+generates the synthesis scripts based on that. The condition
+\quotes{test -n "\$var"} is true if the variable has non-empty value
+while the condition \quotes{test -z "\$var"} is the exact
+opposite. The defined variables determines whether to:
+
+\begin{itemize}
+\item \textbf{YOSYS\_GLOBRST} : Add a global reset to the design.
+\item \textbf{YOSYS\_COARSE}: Synthesis using ABC synthesis tool\\(another well-known, widely used, academic synthesis tool).
+\item \textbf{YOSYS\_SPLITNETS}: Split multi-bit nets in to single-bit nets.
+\end{itemize}
+
+Please refer to the Yosys users' manual for more details.
+
+\section{Exercises}
+
+You are encouraged to go through logic synthesis for both
+\quotes{dot-c} (C-based design) and \quotes{dot-rtl1} (manual design)
+implementations.  The generated statistical synthesis report can be
+used to evaluate the design efficiency.
+
+\end{document}

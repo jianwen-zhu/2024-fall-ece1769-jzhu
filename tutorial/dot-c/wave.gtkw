@@ -1,0 +1,31 @@
+[*]
+[*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
+[*] Mon Aug 22 15:36:05 2016
+[*]
+[dumpfile] "/home/reza/Dropbox/1769-tutorial/dot-c/ver/dot_product.vcd"
+[dumpfile_mtime] "Mon Aug 22 15:33:31 2016"
+[dumpfile_size] 1917804
+[savefile] "/home/reza/Dropbox/1769-tutorial/dot-c/ver/wave.gtkw"
+[timestart] 1863
+[size] 1855 1056
+[pos] -1856 -31
+*-3.000000 1731 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] top.
+[treeopen] top.v.
+[sst_width] 223
+[signals_width] 182
+[sst_expanded] 1
+[sst_vpaned_height] 321
+@28
+top.ap_clk
+top.ap_rst
+top.fin_buf_full
+top.v.dot_prod.ap_clk
+top.v.dot_prod.ap_rst
+top.v.dot_prod.ap_CS_fsm[2:0]
+top.v.dot_prod.ap_NS_fsm[2:0]
+@22
+top.v.memory.memory_Addr_A[15:0]
+top.v.memory.memory_Addr_B[15:0]
+[pattern_trace] 1
+[pattern_trace] 0

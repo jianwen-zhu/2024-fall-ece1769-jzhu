@@ -1,0 +1,358 @@
+\documentclass[12pt]{article}
+\usepackage[english]{babel}
+\usepackage{natbib}
+\usepackage{url}
+\usepackage[utf8x]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\graphicspath{{images/}}
+\usepackage{parskip}
+\usepackage{fancyhdr}
+\usepackage{vmargin}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{siunitx}
+\usepackage{rotating}
+\usepackage{multirow}
+\usepackage{listings}
+\usepackage{hyperref}
+\setmarginsrb{3 cm}{2.5 cm}{3 cm}{2.5 cm}{1 cm}{1.5 cm}{1 cm}{1.5 cm}
+
+\title{Tutorial-1: C-Based Design Flow}						% Title
+\author{Jianwen Zhu}								% Author
+\date{\today}									% Date
+\newcommand{\course} {ECE1769H}
+\newcommand{\quotes}[1]{``#1''}
+
+\makeatletter
+\let\thetitle\@title
+\let\theauthor\@author
+\let\thedate\@date
+\makeatother
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\course}
+\rhead{\thetitle}
+\cfoot{\thepage}
+
+\newcommand {\comment}[1]{\iffalse #1 \fi}
+
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{titlepage}
+	\centering
+    \vspace*{0.5 cm}
+    \includegraphics[scale = 0.12]{UofT.png}\\[1.0 cm]	% University Logo
+    \textsc{\LARGE University of Toronto}\\[2.0 cm]	% University Name
+	\textsc{\Large \course}\\[0.5 cm]				% Course Code
+	\textsc{\large Behavioral Synthesis of Digital Integrated Circuits}\\[0.5 cm]				% Course Name
+	\rule{\linewidth}{0.2 mm} \\[0.4 cm]
+	{ \huge \bfseries \thetitle}\\
+	\rule{\linewidth}{0.2 mm} \\[1.5 cm]
+	
+	%\begin{minipage}{0.4\textwidth}
+		%\begin{flushleft} 
+		\large
+			\emph{Instructor:}\\
+			\theauthor 
+		%	\end{flushleft}
+		%	\end{minipage}~
+			
+ 
+	\vfill
+	
+\end{titlepage}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Introduction}
+
+In this tutorial, you learn two design flows of digital design.  You
+start with a reference application in C, where you define the
+functionality (behavior) of your design. There are two alternative path
+to bring the design down to the register transfer level: 
+
+\begin{enumerate}
+\item Register Transfer Level (RTL) design flow, where you enter your
+  design at RTL in Verilog {\bf manually};
+  
+\item C-based design flow, where you enter your design in C, and then
+  use high level synthesis (HLS) to generate a RTL design {\bf
+    automatically}.
+\end{enumerate}
+
+In both design flows, you used {\bf compiled functional simulation} to
+verify your design at the register transfer level.
+
+Three primary EDA tools are used in this tutorial:
+
+\begin{enumerate}
+\item Verilator, an open-sourced Verilog compiler, which convert the
+  Verilog into C++. Together with a C++ testbench, the RTL design can
+  be verified in a cycle-accurate fashion.  C-based simulation reduces
+  the simulation time significantly compared to the traditional
+  discrete-event simulation.
+
+\item GTKWave, an open-sourced waveform viewer, can be used to inspect
+  waveforms from the result of verilator simulation.
+  
+\item Vivada HLS, a commercial HLS tool from Xilinx, is used to convert
+  C/C++ design into RTL in Verilog.
+
+\end{enumerate}
+
+
+\section{Environment Setup}
+
+The required files for this tutorial are available for download
+through the following command:
+
+\begin{lstlisting}[language=bash]
+  $git clone https://github.com/jianwen-zhu/2024-fall-ece1749-jzhu.git
+\end{lstlisting}
+
+After cloning the material, you need to create a “site.mk” based on
+“site.mk.sample” and provide correct path for the required softwares.
+
+\begin{lstlisting}[language=bash]
+  $cd 2024-fall-ece1749-jzhu
+  $cd tutorial
+  $cp site.mk.sample site.mk
+\end{lstlisting}
+
+
+All the required softwares required for this tutorial are already
+installed on UG machines and you do not need to install anything if
+you make your working directory on those machines. We STRONGLY
+RECOMMEND that you do the clone on UG machines rather than your local
+machine. In that case the variables need to be setup as follows:
+
+\begin{lstlisting}[language=bash]
+VIVADO_HLS_PATH = /cad2/ece1769s/xilinx/Vivado_HLS/2014.4/bin
+VERILATOR_PATH = /cad2/ece1769s/verilator/bin
+GTKWAVE_PATH = /cad2/ece1769s/gtkwave/bin
+\end{lstlisting}
+
+NOTE: if you decide to work on UG machines through SSH, you need to
+enable -X option since Gtkwave opens a GUI.
+
+\section{Example Design}
+
+In this tutorial we pick an example design and walk you through the
+steps of both flows. Our case study is the dot product
+calculator. Given two input vectors, the dot product is calculated
+using the following formula:
+
+\[
+A \cdot B = \Sigma_{i=1}^{n} A_i B_i
+\]
+
+The design has a {\em start} and {\em done} signal. Upon receiving the
+{\em start} signal, the hardware reads the A and B vectors from the
+memory and writes their dot product result to the memory at the end of
+the calculation, after which the {\em done} signal is asserted.
+
+\section{Directory Organization}
+
+A directory called “tutorial” is provided for you and it contains the
+following directories and files:
+
+\begin{enumerate}
+
+\item ref: Reference design in C along with its makefile to be used
+    as the golden model.
+
+\item dot-rtl1: The Verilog Implementation of dot product, the
+    makefile and wave viewing related files.
+
+\item dot-c: C (HLS) implementation of dot product along with a
+  Makefile to perform synthesis in Vivado, and simulation in
+  Verilator.
+
+\item tb: This directory contains the C testbench used by Verilator to
+  simulate both manual RTL design and Vivado generated RTL design.
+
+\item doc: This directory contains Verilator’s reference manual.
+
+\item common.mk: This file contains the Makefile rules that are common
+  across different designs (C and RTL in this case).
+
+\item site.mk.sample: This file contains the variables used by
+  Makefiles in other directories.
+  
+NOTE: You need to copy this file into “site.mk” and define correct
+paths for Vivado, Verilator, and Gtkwave in this file before starting
+the tutorial (VIVADO\_HLS\_PATH, VERILATOR\_PATH, and GTKWAVE\_PATH
+variables).
+
+\end{enumerate}
+
+\section{Reference Design}
+
+A software implementation of the dot product is provided for you as a
+reference in “tutorial/ref” directory. You can compile and run it
+using the makefile in that directory. We provide a fixed random input
+to the system and you should compare the software implementation’s
+output with the hardware’s output that you get in later steps of this
+tutorial.
+
+\section{Manual Verilog Implementation}
+
+The Verilog Implementation of dot-product is provided for you in the
+“dot-rtl1” directory. For the purpose of testing, we put a block ram
+beside the dot product calculator and wrap them as single module. Blow
+is the explanation of the files in this directory:
+
+\begin{enumerate}
+  
+\item datapath.v: Data path module for dot product unit.
+  
+\item controller.v: Controller module for dot product unit.
+  
+\item dp\_unit.v: The dot product unit that connects the controller
+  and the data path.
+  
+\item dp\_bram.v: The dual port BRAM to test the dot product unit (The
+  memory to store input and output values).
+  
+\item data.dat: The BRAM initialization data (The input data).
+  
+\item dot\_product.v: The tester module that connects the dot product
+  unit to the BRAM. This module has start and done signals to control
+  the operation of the dot product unit.
+  
+\item Makefile: The project specific Makefile that includes the
+  “common.mk” in the parent directory.
+
+\item wave.gtkw: The waveform configuration file that is used by
+  waveform viewer to add the signals to the wave view.
+
+\end{enumerate}
+
+\section{C++ Simulation with Verilator}
+
+The first step towards simulation with Verilator is to convert the
+Verilog design into C. Go to dot-rtl1 Directory:
+
+\begin{lstlisting}[language=bash]
+cd dot-rtl1
+\end{lstlisting}
+
+Then do:
+
+\begin{lstlisting}[language=bash]
+make verilate
+\end{lstlisting}
+
+This command generates the C from RTL and uses the “tb/sim\_main.cpp”
+as the testbench for the design. Open “tb/sim\_main.cpp” and try to
+understand it. Verilator generates a class out of the the top Verilog
+module (Vdot product in this case).  In sim main.cpp, we instantiate
+an object from this class first. Then we have access to module ports
+through that object. We also instantiate an object from Verilated-VcdC
+class to dump the trace into a vcd file. Eventually, we feed the {\em
+  start} signal and wait for the {\em done} signal. Running the above
+command leads to the generation of the obj\_dir directory that
+contains the outputs, i.e. the generated C files. Then the generated C
+files are compiled to create the executable binary.
+
+Then do:
+
+\begin{lstlisting}[language=bash]
+make sim
+\end{lstlisting}
+
+to the generation of the vcd file that contains the waveform trace.
+After doing the simulation, you need to check the waveform to make
+sure that the design performs as expected. A shell script is provided
+for you for this purpose.
+
+Enter the following command:
+
+\begin{lstlisting}[language=bash]
+  $make view
+\end{lstlisting}
+
+to view the waveform. This command will open the GTKW software which
+can red the contents of the vcd file.
+
+NOTE: The file “wave.gtkw” stores the waveform representation format.
+
+\section{Vivado HLS}
+
+As the second flow, you will work with Vivado HLS which is offered by
+Xilinx to perform High-Level Synthesis (HLS). Go to the “dot-c”
+directory:
+
+\begin{lstlisting}[language=bash]
+  $cd dot-c
+\end{lstlisting}
+
+\begin{enumerate}
+\item dot\_product.c and dot\_product.h: C and header file for the design.
+
+\item dot\_product\_tb.c: C testbench to test the design.
+
+\item directives.tcl: HLS directives (This will be explained later).
+
+\item script.tcl: TCL script to run high-level synthesis.
+
+\item Makefile: The project specific Makefile that includes the “common.mk” in
+  the parent directory.
+  
+\end{enumerate}
+
+Type: 
+\begin{lstlisting}[language=bash]
+  $make csyn
+\end{lstlisting}
+
+This command uses “script.tcl” to generate Vivado HLS project using
+the provided source files. It also synthesizes the design and
+generates RTL Verilog. In Vivado HLS you can use certain directives to
+improve the generated hardware. these directives should be placed in
+the “directives.tcl” file. However, the explanation of how to apply
+directives to the design is beyond the scope of this tutorial. You can
+refer to Vivado HLS manuals if you are interested in learning about
+directives. The generated RTL design will be generated in
+“c/vivado\_hls/sol/syn/verilog” directory.
+
+Then the RTL design generated by Vivado HLS is copied into the working
+directory.  Finally it runs Verilator to convert the generated RTL
+into C++ using the same testbench we used in the first flow. The rest
+of the flow will be same as the first flow. Type
+\begin{lstlisting}[language=bash]
+  $make verilate
+  $make sim
+\end{lstlisting}
+
+To perform the simulation, and:
+
+\begin{lstlisting}[language=bash]
+  $make view
+\end{lstlisting}
+
+to view the waveform.
+
+
+\section{Exercises}
+
+The the designs we provided for you are (intentionally) not perfect
+and there are many potentials for improvement. This tutorial can only
+be used as a start point for your own project. You can also write more
+efficient implementations of the dot product unit.
+
+To use the material for your own project, you can create a directory
+beside dot-c and dot-rtl1, create your Makefile similar to the ones in
+those directories, and add your project specific rules to it.
+
+\end{document}
