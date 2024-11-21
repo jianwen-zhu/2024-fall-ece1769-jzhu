@@ -215,13 +215,13 @@ The first step towards simulation with Verilator is to convert the
 Verilog design into C++. Go to dot-rtl1 Directory:
 
 \begin{lstlisting}[language=bash]
-cd dot-rtl1
+$cd dot-rtl1
 \end{lstlisting}
 
 Then do:
 
 \begin{lstlisting}[language=bash]
-make verilate
+$make verilate
 \end{lstlisting}
 
 This make target perform several actions:
@@ -254,7 +254,7 @@ Completing this step should generate an executable ready for execution.
 Do:
 
 \begin{lstlisting}[language=bash]
-make sim
+$make sim
 \end{lstlisting}
 
 This should run the generated executable from the previous step with
@@ -269,7 +269,7 @@ sure that the design performs as expected.
 Do: 
 
 \begin{lstlisting}[language=bash]
-  $make view
+$make view
 \end{lstlisting}
 
 to view the waveform. This should open the GtkWave graphical user interface (GUI)

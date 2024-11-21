@@ -1,4 +1,4 @@
-all : tutorial-1-handout.pdf tutorial-2-handout.pdf
+all : lab.pdf tutorial-1-rtl.pdf tutorial-2-csyn.pdf tutorial-3-syn.pdf
 
 %.pdf : %.tex
 	pdflatex $*.tex
