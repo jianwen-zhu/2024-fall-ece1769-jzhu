@@ -4,8 +4,8 @@
 # FIND ALL VERILOG FILES AND DEFINE
 # ENV VERILOG FILES
 ###################################
-RTL_FILES	= $(filter-out sim_%.v, $(shell find . -maxdepth 1 -name "*.v"))
-ENV_FILES	= sim_top_level.v sim_dp_bram.v sim_fifo.v
+RTL_FILES	= $(filter-out ./sim_%.v, $(shell find . -maxdepth 1 -name "*.v"))
+ENV_FILES	= sim_dp_bram.v sim_fifo.v sim_top_level.v
 
 ###################################
 # TEST BENCH AND LIB PATH
@@ -41,15 +41,16 @@ csyn: $(TOP_MODULE).v
 # Verilator rules
 ###################################
 VIEW_OPTIONS		= --save=wave.gtkw
-VV			= $(VERILATOR_PATH)/bin/verilator
+VV			= $(VERILATOR_PATH)/verilator
 VFLAGS			= --trace -Wno-WIDTH
 CFLAGS			= -j
+SHARE_PATH		= $(VERILATOR_PATH)/../share/verilator
 CPP_FLAGS		= -I$(INCLUDE_DIR)  -Iobj_dir/ -I$(HARDWARE_LIB_DIR) -I$(TEST_BENCH_DIR)
-CPP_FLAGS		+= -I$(VERILATOR_PATH)/include -I$(VERILATOR_PATH)/include/vltstd
+CPP_FLAGS		+= -I$(SHARE_PATH)/include -I$(SHARE_PATH)/include/vltstd
 
-VERILATOR_OBJS_FILES 	= Vtop_level__ALL.a  verilated.o verilated_dpi.o verilated_vcd_c.o 
+VERILATOR_OBJS_FILES 	= Vsim_top_level__ALL.a  verilated.o verilated_dpi.o verilated_vcd_c.o 
 VERILATOR_OBJS 		= $(addprefix obj_dir/, $(VERILATOR_OBJS_FILES))
-VERILATOR_MAKEFILE	= obj_dir/Vtop_level.mk
+#VERILATOR_MAKEFILE	= obj_dir/Vtop_level.mk
 
 verilate: $(TOP_MODULE).verilated
 
@@ -57,9 +58,9 @@ $(TOP_MODULE).verilated:  $(VERILATOR_OBJS) $(TEST_BENCH) $(HARDWARE_LIB)
 	g++ -o $(TOP_MODULE).verilated $(TEST_BENCH) $(HARDWARE_LIB) $(VERILATOR_OBJS) -lpthread
 
 $(VERILATOR_OBJS): $(TOP_MODULE).v $(ENV_FILES)
-	$(VV) $(VFLAGS)  -I$(INCLUDE_DIR) --cc sim_top_level.v 
+	$(VV) $(VFLAGS)  -I$(INCLUDE_DIR) --cc sim_top_level.v
 	cd obj_dir && \
-	make $(CFLAGS)  -f Vtop_level.mk CXXFLAGS=-pthread $(VERILATOR_OBJS_FILES)
+	make $(CFLAGS)  -f Vsim_top_level.mk CXXFLAGS=-pthread $(VERILATOR_OBJS_FILES)
 
 
 %.o: %.cpp
@@ -134,7 +135,7 @@ stat:   synth.stat
 
 sim_top_level.v:
 	@echo "\`include \"consts.vh\"" >> $@
-	@echo "module top_level #(parameter P_DATA_WIDTH=\`data_width, parameter P_ADDR_WIDTH=\`addr_width, parameter P_COUNT=\`in_data_size) (" >> $@
+	@echo "module sim_top_level #(parameter P_DATA_WIDTH=\`data_width, parameter P_ADDR_WIDTH=\`addr_width, parameter P_COUNT=\`in_data_size) (" >> $@
 	@echo "input ap_clk," >> $@
 	@echo "input ap_rst," >> $@
 	@echo "// INPUT FIFO SIGNALS" >> $@
@@ -179,7 +180,7 @@ sim_top_level.v:
 	@echo "assign memory_Rst_A = ap_rst;" >> $@
 	@echo "assign memory_Rst_B = ap_rst;" >> $@
 	@echo "" >> $@
-	@echo "fifo #(\`instr_width,P_ADDR_WIDTH,\`q_width,\`q_size) fifo_in(" >> $@
+	@echo "sim_fifo #(\`instr_width,P_ADDR_WIDTH,\`q_width,\`q_size) fifo_in(" >> $@
 	@echo ".clk(ap_clk)," >> $@
 	@echo ".rst(ap_rst)," >> $@
 	@echo ".buf_in(fin_buf_in), " >> $@
@@ -192,7 +193,7 @@ sim_top_level.v:
 	@echo ".fifo_counter(fin_counter)" >> $@
 	@echo ");" >> $@
 	@echo "" >> $@
-	@echo "fifo #(\`instr_width,P_ADDR_WIDTH,\`q_width,\`q_size) fifo_out(" >> $@
+	@echo "sim_fifo #(\`instr_width,P_ADDR_WIDTH,\`q_width,\`q_size) fifo_out(" >> $@
 	@echo ".clk(ap_clk)," >> $@
 	@echo ".rst(ap_rst)," >> $@
 	@echo ".buf_in(fout_buf_in), " >> $@
@@ -205,7 +206,7 @@ sim_top_level.v:
 	@echo ".fifo_counter(fout_counter)" >> $@
 	@echo ");" >> $@
 	@echo "" >> $@
-	@echo "dp_bram #(P_DATA_WIDTH, P_ADDR_WIDTH, P_COUNT) memory(" >> $@
+	@echo "sim_dp_bram #(P_DATA_WIDTH, P_ADDR_WIDTH, P_COUNT) memory(" >> $@
 	@echo "" >> $@
 	@echo ".memory_Addr_A(memory_Addr_A)," >> $@
 	@echo ".memory_EN_A(memory_EN_A)," >> $@
@@ -254,7 +255,7 @@ sim_top_level.v:
 	@echo "endmodule" >> $@
 
 sim_dp_bram.v:
-	@echo "module dp_bram #(parameter P_DATA_WIDTH=32, parameter P_ADDR_WIDTH=8, parameter P_COUNT=100)" >> $@
+	@echo "module sim_dp_bram #(parameter P_DATA_WIDTH=32, parameter P_ADDR_WIDTH=8, parameter P_COUNT=100)" >> $@
 	@echo "(" >> $@
 	@echo "// PORT A SIGNALS" >> $@
 	@echo "input [P_ADDR_WIDTH-1:0] 		memory_Addr_A," >> $@
@@ -321,7 +322,7 @@ sim_dp_bram.v:
 sim_fifo.v:
 	@echo "\`include \"consts.vh\"" >> $@
 	@echo "" >> $@
-	@echo "module fifo #(parameter INSTR_WIDTH=\`instr_width,parameter ADDR_WIDTH=\`addr_width,parameter Q_WIDTH=\`q_width,parameter Q_SIZE=\`q_size)" >> $@
+	@echo "module sim_fifo #(parameter INSTR_WIDTH=\`instr_width,parameter ADDR_WIDTH=\`addr_width,parameter Q_WIDTH=\`q_width,parameter Q_SIZE=\`q_size)" >> $@
 	@echo "(" >> $@
 	@echo "input                   clk," >> $@
 	@echo "input                   rst," >> $@

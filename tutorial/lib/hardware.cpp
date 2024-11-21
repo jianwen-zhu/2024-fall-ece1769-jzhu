@@ -28,7 +28,7 @@ Hardware::Hardware(int argc, char **argv, char **env){
 
 	char *file_name = argv[1];
 	Verilated::commandArgs(argc,argv);
-	top = new Vtop_level("top");
+	top = new Vsim_top_level("top");
 	Verilated::debug(0);
 	Verilated::traceEverOn(true);
 	tfp = new VerilatedVcdC;

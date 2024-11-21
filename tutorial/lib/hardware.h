@@ -8,7 +8,7 @@
 #include "verilated_vcd_c.h"
 #include "verilated_syms.h"
 #include "verilated.h"
-#include "Vtop_level__Syms.h"
+#include "Vsim_top_level__Syms.h"
 
 #define MAX_NUM_PORTS 100
 
@@ -19,7 +19,7 @@
 
 typedef enum type {FIFO_PUSH, FIFO_POP, MEM_READ, MEM_WRITE} PortType;
 
-typedef Vtop_level__Syms design_syms;
+typedef Vsim_top_level__Syms design_syms;
 
 typedef struct FuncSig{
 	void* ptr;
@@ -40,7 +40,7 @@ class Hardware{
 	private:
 		int cycle;
 		pthread_t t;
-		Vtop_level *top;
+		Vsim_top_level *top;
 		VerilatedVcdC *tfp;
    		FuncSig funcPtrsVect[MAX_NUM_PORTS];
 
