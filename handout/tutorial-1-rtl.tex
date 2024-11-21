@@ -1,0 +1,286 @@
+\documentclass[12pt]{article}
+\usepackage[english]{babel}
+\usepackage{natbib}
+\usepackage{url}
+\usepackage[utf8x]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\graphicspath{{images/}}
+\usepackage{parskip}
+\usepackage{fancyhdr}
+\usepackage{vmargin}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{siunitx}
+\usepackage{rotating}
+\usepackage{multirow}
+\usepackage{listings}
+\usepackage{hyperref}
+\setmarginsrb{3 cm}{2.5 cm}{3 cm}{2.5 cm}{1 cm}{1.5 cm}{1 cm}{1.5 cm}
+
+\title{Tutorial 1: Register Transfer Level (RTL) Design Flow}			% Title
+\author{Jianwen Zhu}								% Author
+\date{\today}									% Date
+\newcommand{\course} {ECE1769H}
+\newcommand{\quotes}[1]{``#1''}
+
+\makeatletter
+\let\thetitle\@title
+\let\theauthor\@author
+\let\thedate\@date
+\makeatother
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\course}
+\rhead{\thetitle}
+\cfoot{\thepage}
+
+\newcommand {\comment}[1]{\iffalse #1 \fi}
+
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{titlepage}
+	\centering
+    \vspace*{0.5 cm}
+    \includegraphics[scale = 0.12]{UofT.png}\\[1.0 cm]	% University Logo
+    \textsc{\LARGE University of Toronto}\\[2.0 cm]	% University Name
+	\textsc{\Large \course}\\[0.5 cm]				% Course Code
+	\textsc{\large Behavioral Synthesis of Digital Integrated Circuits}\\[0.5 cm]				% Course Name
+	\rule{\linewidth}{0.2 mm} \\[0.4 cm]
+	{ \huge \bfseries \thetitle}\\
+	\rule{\linewidth}{0.2 mm} \\[1.5 cm]
+	
+	%\begin{minipage}{0.4\textwidth}
+		%\begin{flushleft} 
+		\large
+			\emph{Instructor:}\\
+			\theauthor 
+		%	\end{flushleft}
+		%	\end{minipage}~
+			
+ 
+	\vfill
+	
+\end{titlepage}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Introduction}
+
+In this tutorial, we will learn the {\bf manual} Register Transfer Level
+(RTL) design flow of digital design. Specifically, we:
+
+
+\begin{enumerate}
+\item Start with a reference application in {\bf C}, where you define the
+functionality (behavior) of your design;
+  
+\item Manually enter RTL design in {\bf Verilog};
+  
+\item Verify RTL design using {\bf compiled simulation}.
+\end{enumerate}
+
+Two EDA tools are used in this tutorial:
+
+\begin{enumerate}
+\item {\bf Verilator}, an open-sourced Verilog compiler, which convert
+  the Verilog into C++. Together with a C++ testbench, the RTL design
+  can be verified in a cycle-accurate fashion. Compared to the
+  traditional discrete-event simulation, compiled simulation reduces
+  verification time significantly.
+  
+
+\item {\bf GtkWave}, an open-sourced waveform viewer, can be used to
+  inspect waveforms from the result of compiled simulation run, and
+  debug your design if there is a problem.
+  
+\end{enumerate}
+
+
+\section{Environment Setup}
+
+The required files for this tutorial are available for download
+through the following command:
+
+\begin{lstlisting}[language=bash]
+  $git clone https://github.com/jianwen-zhu/2024-fall-ece1769-jzhu.git
+\end{lstlisting}
+
+After cloning the material, you need to create a “site.mk” based on
+“site.mk.sample” and provide correct path for the required softwares.
+
+\begin{lstlisting}[language=bash]
+  $cd 2024-fall-ece1749-jzhu
+  $cd tutorial
+  $cp site.mk.sample site.mk
+\end{lstlisting}
+
+All the required softwares required for this tutorial are already
+installed on UG machines. We STRONGLY RECOMMEND that you do the clone
+on UG machines rather than your local machine. In that case the
+variables need to be setup as follows:
+
+\begin{lstlisting}[language=bash]
+VERILATOR_PATH = /cad2/ece1769s/verilator/bin
+GTKWAVE_PATH = /cad2/ece1769s/gtkwave/bin
+\end{lstlisting}
+
+NOTE: if you decide to work on UG machines through SSH, you need to
+enable -X option since Gtkwave opens a GUI.
+
+\section{Example Design}
+
+In this tutorial we pick an example design and walk you through the
+steps of both flows. Our case study is the dot product
+calculator. Given two input vectors, the dot product is calculated
+using the following formula:
+
+\[
+A \cdot B = \Sigma_{i=1}^{n} A_i B_i
+\]
+
+The design has a {\em start} and {\em done} signal. Upon receiving the
+{\em start} signal, the hardware reads the A and B vectors from the
+memory and writes the sum of the product of their respective elements
+to the memory, after which the {\em done} signal is asserted.
+
+\section{Directory Organization}
+
+A directory called “tutorial” is provided for you and it contains the
+following directories and files:
+
+\begin{enumerate}
+
+\item ref: Reference design in C along with its makefile to be used
+    as the golden model;
+
+\item dot-rtl1: The Verilog Implementation of dot product unit;
+
+\item tb: The C-based testbench to simulate the RTL design;
+
+\item doc: Reference manuals for relevant CAD tools;
+
+\item common.mk: Makefile rules that encodes the design flow;
+
+\item site.mk.sample: Site-specific Makefile configurations (NOTE: You
+  need to copy this file into “site.mk” and define correct paths for
+  tools).
+
+\end{enumerate}
+
+\section{Reference Design in C}
+
+A software implementation of the dot product is provided for you as a
+reference in “tutorial/ref” directory. You can compile and run it
+using the makefile in that directory. We provide a fixed random input
+to the system and you should compare the software implementation’s
+output with the hardware’s output that you get in later steps of this
+tutorial.
+
+\section{Manual Verilog Implementation}
+
+One Verilog Implementation of dot-product is provided for you in the
+“dot-rtl1” directory. For the purpose of testing, we put a block ram
+beside the dot product calculator and wrap them as single module. Blow
+is the explanation of the files in this directory:
+
+\begin{enumerate}
+  
+\item datapath.v: Data path module for dot product unit.
+  
+\item controller.v: Controller module for dot product unit.
+  
+\item dot\_product.v: The dot product unit that connects the controller
+  and the data path.
+  
+\item Makefile: The project specific Makefile that includes the
+  “common.mk” in the parent directory.
+
+\end{enumerate}
+
+\section{C-based Simulation with Verilator}
+
+\subsection{Compiling RTL Design}
+
+The first step towards simulation with Verilator is to convert the
+Verilog design into C++. Go to dot-rtl1 Directory:
+
+\begin{lstlisting}[language=bash]
+cd dot-rtl1
+\end{lstlisting}
+
+Then do:
+
+\begin{lstlisting}[language=bash]
+make verilate
+\end{lstlisting}
+
+This make target perform several actions:
+
+\begin{enumerate}
+\item Generate top-level simulation verilog files:
+  sim\_top\_level.v, sim\_dp\_bram.v, sim\_fifo.v, which
+  represents the {\em test environment} around the design
+  under test (DUT);
+
+\item Generate C++ from the verilog files using Verilator;
+
+\item Link the generated C++ again the C++ testbench in
+  the tutorial/tb directory. 
+  
+\end{enumerate}
+
+Open “tb/sim\_main.cpp” and try to understand how it works.  Verilator
+generates a C++ class out of the the top level Verilog module
+(sim\_top\_level.v).  In sim\_main.cpp, we instantiate an object from
+the said top level class first. We then have access to module ports
+through that object. We also instantiate an object from Verilated-VcdC
+class to dump the trace into a vcd file. In the testbench, we feed the
+{\em start} signal and wait for the {\em done} signal.
+
+Completing this step should generate an executable ready for execution.
+
+\subsection{Running Compiled Simulation}
+
+Do:
+
+\begin{lstlisting}[language=bash]
+make sim
+\end{lstlisting}
+
+This should run the generated executable from the previous step with
+the right settings. If completed successfully, this step should
+generate a vcd file that contains the waveform trace.
+
+\subsection{Inspecting Waveforms}
+
+After doing the simulation, you can check the waveforms to make
+sure that the design performs as expected.
+
+Do: 
+
+\begin{lstlisting}[language=bash]
+  $make view
+\end{lstlisting}
+
+to view the waveform. This should open the GtkWave graphical user interface (GUI)
+and visualize the contents of the vcd file.
+
+\section{Exercises}
+
+The design we provided for you is (intentionally) sub-optimal and
+there are many potentials for improvement. This tutorial can only be
+used as a start point for your own project. You are encouraged to
+come up with a better design, for example, by cloning dot-rtl1 to
+another directory, for example, dot-rtl2, and start from there.
+
+\end{document}

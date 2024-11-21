@@ -1,0 +1,274 @@
+\documentclass[12pt]{article}
+\usepackage[english]{babel}
+\usepackage{natbib}
+\usepackage{url}
+\usepackage[utf8x]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\graphicspath{{images/}}
+\usepackage{parskip}
+\usepackage{fancyhdr}
+\usepackage{vmargin}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{siunitx}
+\usepackage{rotating}
+\usepackage{multirow}
+\usepackage{listings}
+\usepackage{hyperref}
+\setmarginsrb{3 cm}{2.5 cm}{3 cm}{2.5 cm}{1 cm}{1.5 cm}{1 cm}{1.5 cm}
+
+\title{Tutorial 2: C-Based High Level Synthesis (HLS) Design Flow}		% Title
+\author{Jianwen Zhu}								% Author
+\date{\today}									% Date
+\newcommand{\course} {ECE1769H}
+\newcommand{\quotes}[1]{``#1''}
+
+\makeatletter
+\let\thetitle\@title
+\let\theauthor\@author
+\let\thedate\@date
+\makeatother
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\course}
+\rhead{\thetitle}
+\cfoot{\thepage}
+
+\newcommand {\comment}[1]{\iffalse #1 \fi}
+
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{titlepage}
+	\centering
+    \vspace*{0.5 cm}
+    \includegraphics[scale = 0.12]{UofT.png}\\[1.0 cm]	% University Logo
+    \textsc{\LARGE University of Toronto}\\[2.0 cm]	% University Name
+	\textsc{\Large \course}\\[0.5 cm]				% Course Code
+	\textsc{\large Behavioral Synthesis of Digital Integrated Circuits}\\[0.5 cm]				% Course Name
+	\rule{\linewidth}{0.2 mm} \\[0.4 cm]
+	{ \huge \bfseries \thetitle}\\
+	\rule{\linewidth}{0.2 mm} \\[1.5 cm]
+	
+	%\begin{minipage}{0.4\textwidth}
+		%\begin{flushleft} 
+		\large
+			\emph{Instructor:}\\
+			\theauthor 
+		%	\end{flushleft}
+		%	\end{minipage}~
+			
+ 
+	\vfill
+	
+\end{titlepage}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Introduction}
+
+In this tutorial, you will learn C-based High Level Synthesis (HLS)
+design flow.
+
+Youstart with a reference application in C, where you define the
+functionality (behavior) of your design. There are two alternative
+path to bring the design down to the register transfer level:
+
+\begin{enumerate}
+\item Register Transfer Level (RTL) design flow, where you enter your
+  design at RTL in Verilog {\bf manually}, which is covered in the
+  previous tutorial;
+  
+\item C-based design flow, where you enter your design in C, and then
+  use high level synthesis (HLS) to generate a RTL design {\bf
+    automatically}.
+\end{enumerate}
+
+In both design flows, you can use {\bf compiled functional simulation} to
+verify your design at the register transfer level, which is covered in the
+previous design flow.
+
+Three primary EDA tools are used in this tutorial:
+
+\begin{enumerate}
+\item Verilator, an open-sourced Verilog compiler, which convert the
+  Verilog into C++. Together with a C++ testbench, the RTL design can
+  be verified in a cycle-accurate fashion.  C-based simulation reduces
+  the simulation time significantly compared to the traditional
+  discrete-event simulation.
+
+\item GTKWave, an open-sourced waveform viewer, can be used to inspect
+  waveforms from the result of verilator simulation.
+  
+\item Vivada HLS, a commercial HLS tool from Xilinx, is used to convert
+  C/C++ design into RTL in Verilog.
+
+\end{enumerate}
+
+
+\section{Environment Setup}
+
+The required files for this tutorial are available for download
+through the following command:
+
+\begin{lstlisting}[language=bash]
+  $git clone https://github.com/jianwen-zhu/2024-fall-ece1749-jzhu.git
+\end{lstlisting}
+
+After cloning the material, you need to create a “site.mk” based on
+“site.mk.sample” and provide correct path for the required softwares.
+
+\begin{lstlisting}[language=bash]
+  $cd 2024-fall-ece1749-jzhu
+  $cd tutorial
+  $cp site.mk.sample site.mk
+\end{lstlisting}
+
+
+All the required softwares required for this tutorial are already
+installed on UG machines and you do not need to install anything if
+you make your working directory on those machines. We STRONGLY
+RECOMMEND that you do the clone on UG machines rather than your local
+machine. In that case the variables need to be setup as follows:
+
+\begin{lstlisting}[language=bash]
+VIVADO_HLS_PATH = /cad2/ece1769s/xilinx/Vivado_HLS/2014.4/bin
+VERILATOR_PATH = /cad2/ece1769s/verilator/bin
+GTKWAVE_PATH = /cad2/ece1769s/gtkwave/bin
+\end{lstlisting}
+
+NOTE: if you decide to work on UG machines through SSH, you need to
+enable -X option since Gtkwave opens a GUI.
+
+\section{Example Design}
+
+In this tutorial we pick an example design and walk you through the
+steps of both flows. Our case study is the dot product
+calculator. Given two input vectors, the dot product is calculated
+using the following formula:
+
+\[
+A \cdot B = \Sigma_{i=1}^{n} A_i B_i
+\]
+
+The design has a {\em start} and {\em done} signal. Upon receiving the
+{\em start} signal, the hardware reads the A and B vectors from the
+memory and writes their dot product result to the memory at the end of
+the calculation, after which the {\em done} signal is asserted.
+
+\section{Directory Organization}
+
+A directory called “tutorial” is provided for you and it contains the
+following directories and files:
+
+You have seen the following in Tutorial 1.
+
+\begin{enumerate}
+
+\item ref: Reference design in C along with its makefile to be used
+    as the golden model;
+
+\item dot-rtl1: The Verilog Implementation of dot product unit;
+
+\item tb: The C-based testbench to simulate the RTL design;
+
+\item doc: Reference manuals for relevant CAD tools;
+
+\item common.mk: Makefile rules that encodes the design flow;
+
+\item site.mk.sample: Site-specific Makefile configurations (NOTE: You
+  need to copy this file into “site.mk” and define correct paths for
+  tools).
+
+\end{enumerate}
+
+The new directory that you should focus your attention to is:
+
+\begin{enumerate}
+\item dot-c: C (HLS) implementation of dot product along with a
+  Makefile to perform synthesis in Vivado, and simulation in
+  Verilator.
+\end{enumerate}
+
+\section{Vivado HLS}
+
+Compared to the manual RTL design flow covered in Tutorial 1,
+the only additional step we have in the HLS flow is to use
+the Vivado HLS to generate the RTL design automatically.
+
+Go to the “dot-c” directory:
+
+\begin{lstlisting}[language=bash]
+  $cd dot-c
+\end{lstlisting}
+
+You should find the following files:
+
+\begin{enumerate}
+\item dot\_product.c and dot\_product.h: C and header file for the design
+  made suitable for HLS;
+
+\item dot\_product\_tb.c: C testbench to test the design;
+
+\item directives.tcl: Vivado HLS directives;
+
+\item script.tcl: TCL script to run Vivado HLS;
+
+\item Makefile: The project specific Makefile that includes the “common.mk” in
+  the parent directory.
+  
+\end{enumerate}
+
+Type: 
+\begin{lstlisting}[language=bash]
+  $make csyn
+\end{lstlisting}
+
+This make target uses “script.tcl” to generate Vivado HLS project
+using the provided source files. It also synthesizes the design and
+generates RTL Verilog. In Vivado HLS you can use certain directives to
+improve the generated hardware. these directives should be placed in
+the “directives.tcl” file. However, the detail is beyond the scope of
+this tutorial. You can refer to Vivado HLS manuals if you are
+interested. The generated RTL design will be found in
+“c/vivado\_hls/sol/syn/verilog” directory. The final output RTL is
+copied into the working directory.
+
+\section{Verifying RTL Design}
+
+You can use the same procedure in Tutorial 1 to verify the
+synthesized RTL design.
+
+In the same directory, do: 
+
+\begin{lstlisting}[language=bash]
+  $make verilate
+  $make sim
+\endX{lstlisting}
+
+And do: 
+
+\begin{lstlisting}[language=bash]
+  $make view
+\end{lstlisting}
+
+to view the waveform.
+
+
+\section{Exercises}
+
+The design we provided for you is (intentionally) sub-optimal and
+there are many potentials for improvement. You can explore the Vivada
+manual, especially the pragmas and synthesis directivies, to come up
+with a better design.
+
+\end{document}

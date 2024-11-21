@@ -1,0 +1,135 @@
+\documentclass[12pt]{article}
+\usepackage[english]{babel}
+\usepackage{natbib}
+\usepackage{url}
+%\usepackage[utf8x]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\graphicspath{{images/}}
+\usepackage{parskip}
+\usepackage{fancyhdr}
+\usepackage{vmargin}
+\usepackage{amsmath}
+%\usepackage{mathtools}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{float}
+%\usepackage{siunitx}
+\usepackage{rotating}
+\usepackage{multirow}
+\usepackage{listings}
+\usepackage{hyperref}
+\setmarginsrb{3 cm}{2.5 cm}{3 cm}{2.5 cm}{1 cm}{1.5 cm}{1 cm}{1.5 cm}
+
+\title{Lab: Dot Product Accelerator Design}			% Title
+\author{Jianwen Zhu}						% Author
+\date{\today}							% Date
+\newcommand{\course} {ECE1769H}
+\newcommand{\quotes}[1]{``#1''}
+
+\makeatletter
+\let\thetitle\@title
+\let\theauthor\@author
+\let\thedate\@date
+\makeatother
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\course}
+\rhead{\thetitle}
+\cfoot{\thepage}
+
+\newcommand {\comment}[1]{\iffalse #1 \fi}
+
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{titlepage}
+	\centering
+    \vspace*{0.5 cm}
+%    \includegraphics[scale = 0.12]{images/UofT.png}\\[1.0 cm]	% University Logo
+    \textsc{\LARGE University of Toronto}\\[2.0 cm]	% University Name
+	\textsc{\Large \course}\\[0.5 cm]				% Course Code
+	\textsc{\large Behavioral Synthesis of Digital Integrated Circuits}\\[0.5 cm]				% Course Name
+	\rule{\linewidth}{0.2 mm} \\[0.4 cm]
+	{ \huge \bfseries \thetitle}\\
+	\rule{\linewidth}{0.2 mm} \\[1.5 cm]
+	
+	%\begin{minipage}{0.4\textwidth}
+		%\begin{flushleft} 
+		\large
+			\emph{Instructor:}\\
+			\theauthor 
+		%	\end{flushleft}
+		%	\end{minipage}~
+			
+ 
+	\vfill
+	
+\end{titlepage}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Overview}
+
+In this lab you are challenged to build an accelerator for
+the dot product kernel algorithm.
+
+\section{Prerequsite}
+
+You should complete the following tutorials on your own:
+
+\begin{enumerate}
+  \item Tutorial 1: Register Transfer Level (RTL) Design Flow;
+  \item Tutorial 2: C-Based High Level Synthesis (HLS) Design Flow;
+  \item Tutorial 3: Logic Synthesis Design Flow Using YOSYS.
+\end{enumerate}
+
+\section{Requirements}
+
+You are required to use {\em either} the RTL flow {\em or} the HLS
+flow to improve the dot product design.  The build system illustrated
+in Tutorial 1 and 2 should be utilized for synthesis and
+verification. It is required that the Verilog design is simulated
+(using Verilator) with the same test cases as those in the reference
+code.
+
+Logic synthesis should be carried out using the build flow in
+Tutorial3. The design statistics such as gate count and maximum
+frequency should be gathered. An optional, but bonus effort is the use
+of optimization techniques at the logic level.
+
+\section{Deliverables}
+
+You are required to deliver:
+
+\begin{itemize}
+  \item The source code of the completed design packaged in tar.gz format;
+  \item A technical report in PDF format. 
+\end{itemize}
+
+The source code should have the similar directory structure as the
+sample given in the tutorials. In particular, it should contain the
+Makefile with targets that can re-produce all the required results,
+including those included in the report.
+
+The technical report should include the following material:
+
+\begin{itemize}
+  \item Description of the techniques and decisions you made to improve the design;
+   \item Description of design process and experience;
+  \item Description of performance measurement results;
+  \item Conclusion: a discussion of lesson learned and
+        future work.
+\end{itemize}
+
+\section{Due Date}
+
+The deliverables are due on December 24th. No marks can be given
+before all deliverables are submitted.
+
+\end{document}
