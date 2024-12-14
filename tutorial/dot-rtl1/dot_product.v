@@ -72,6 +72,6 @@ cjob_register cjob_reg(
 	.data_out(fifo_out_din)
 );
 
-assign job_offset = fin_buf_out.addr;
+assign job_offset = fifo_in_dout.addr;
 
 endmodule
